@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { geohashCenter } from '@/lib/geohash';
 import { useMarkerStore, GeohashCell } from '@/stores/markerStore';
@@ -7,16 +7,27 @@ export type SortOption = 'recent' | 'likes' | 'views' | 'expiring';
 
 export function useMapCells() {
   const setCells = useMarkerStore((s) => s.setCells);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchCells = async (sort: SortOption = 'recent') => {
-    const { data, error } = await supabase
+  const fetchCells = async (_sort: SortOption = 'recent') => {
+    setLoading(true);
+    setError(null);
+
+    const { data, error: fetchError } = await supabase
       .from('markers')
       .select('geohash')
       .eq('status', 'approved');
 
-    if (error || !data) return;
+    setLoading(false);
 
-    // Group by geohash client-side (simple for hackathon scale)
+    if (fetchError) {
+      setError(fetchError.message);
+      return;
+    }
+
+    if (!data) return;
+
     const counts = data.reduce<Record<string, number>>((acc, row) => {
       acc[row.geohash] = (acc[row.geohash] ?? 0) + 1;
       return acc;
@@ -34,7 +45,7 @@ export function useMapCells() {
     fetchCells();
   }, []);
 
-  return { fetchCells };
+  return { fetchCells, loading, error };
 }
 
 export async function getMarkersInCell(geohash: string, sort: SortOption = 'recent') {

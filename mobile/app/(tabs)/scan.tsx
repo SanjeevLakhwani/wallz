@@ -1,37 +1,28 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { parseMarkerDeepLink } from '@/lib/marker';
 import { useDiscovery } from '@/hooks/useDiscovery';
 
 export default function ScanScreen() {
   const router = useRouter();
+  const { code: deepLinkCode } = useLocalSearchParams<{ code?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const { discoverByCode, loading } = useDiscovery();
 
-  const handleBarCodeScanned = async ({ data }: { data: string }) => {
-    if (scanned || loading) return;
+  const handleCode = async (markerCode: string) => {
     setScanned(true);
-
-    const code = parseMarkerDeepLink(data);
-    if (!code) {
-      Alert.alert('Not a Wallz tag', 'Try scanning a valid Wallz fiducial marker.', [
-        { text: 'OK', onPress: () => setScanned(false) },
-      ]);
-      return;
-    }
-
-    const result = await discoverByCode(code);
+    const result = await discoverByCode(markerCode);
 
     switch (result.status) {
       case 'success':
-        router.push(`/marker/${result.markerId}`);
+        router.replace(`/marker/${result.markerId}`);
         break;
       case 'already_found':
         Alert.alert('Already in collection', 'You found this one before.', [
-          { text: 'View it', onPress: () => setScanned(false) },
+          { text: 'OK', onPress: () => setScanned(false) },
         ]);
         break;
       case 'expired':
@@ -52,6 +43,25 @@ export default function ScanScreen() {
     }
   };
 
+  // Auto-trigger when arriving via deep link
+  useEffect(() => {
+    if (deepLinkCode && !scanned) handleCode(deepLinkCode);
+  }, [deepLinkCode]);
+
+  const handleBarCodeScanned = async ({ data }: { data: string }) => {
+    if (scanned || loading) return;
+
+    const code = parseMarkerDeepLink(data);
+    if (!code) {
+      Alert.alert('Not a Wallz tag', 'Try scanning a valid Wallz fiducial marker.', [
+        { text: 'OK', onPress: () => setScanned(false) },
+      ]);
+      return;
+    }
+
+    await handleCode(code);
+  };
+
   if (!permission) return <View style={styles.container} />;
 
   if (!permission.granted) {
@@ -68,7 +78,7 @@ export default function ScanScreen() {
   return (
     <View style={styles.container}>
       <CameraView
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
         facing="back"
         onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
         barcodeScannerSettings={{ barcodeTypes: ['qr'] }}

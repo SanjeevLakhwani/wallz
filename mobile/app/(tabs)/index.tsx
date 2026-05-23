@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import MapboxGL from '@rnmapbox/maps';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
@@ -17,7 +17,7 @@ const SORT_OPTIONS: { label: string; value: SortOption }[] = [
 
 export default function MapScreen() {
   const router = useRouter();
-  const { fetchCells } = useMapCells();
+  const { fetchCells, loading, error } = useMapCells();
   const cells = useMarkerStore((s) => s.cells);
   const [sort, setSort] = useState<SortOption>('recent');
   const [cellMarkers, setCellMarkers] = useState<Marker[]>([]);
@@ -57,6 +57,28 @@ export default function MapScreen() {
           </MapboxGL.MarkerView>
         ))}
       </MapboxGL.MapView>
+
+      {loading && (
+        <View style={styles.overlay}>
+          <ActivityIndicator color="#fff" size="large" />
+        </View>
+      )}
+
+      {!loading && error && (
+        <View style={styles.overlay}>
+          <Text style={styles.overlayText}>Failed to load map</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => fetchCells(sort)}>
+            <Text style={styles.retryText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {!loading && !error && cells.length === 0 && (
+        <View style={styles.overlay} pointerEvents="none">
+          <Text style={styles.overlayText}>No tags out there yet</Text>
+          <Text style={styles.overlaySubtext}>Be the first to place one</Text>
+        </View>
+      )}
 
       {/* Sort bar */}
       <View style={styles.sortBar}>
@@ -157,4 +179,21 @@ const styles = StyleSheet.create({
   markerArea: { color: '#fff', fontSize: 15, fontWeight: '600' },
   markerMeta: { color: '#666', fontSize: 12, marginTop: 4 },
   arrow: { color: '#555', fontSize: 20 },
+  overlay: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  overlayText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  overlaySubtext: { color: '#888', fontSize: 13, marginTop: 6 },
+  retryBtn: {
+    marginTop: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  retryText: { color: '#000', fontWeight: '700' },
 });
