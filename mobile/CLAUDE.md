@@ -14,9 +14,9 @@ npx expo run:ios       # or run:android
 ```
 EXPO_PUBLIC_SUPABASE_URL
 EXPO_PUBLIC_SUPABASE_ANON_KEY
-EXPO_PUBLIC_MAPBOX_TOKEN       # public token (pk.eyJ1...)
+EXPO_PUBLIC_MAPBOX_TOKEN          # public token (pk.eyJ1...)
+RNMAPBOX_MAPS_DOWNLOAD_TOKEN      # secret token (sk.eyJ1...) — picked up by @rnmapbox/maps at prebuild
 ```
-Mapbox secret token (`sk.eyJ1...`) goes in `app.json` under `RNMapboxMapsDownloadToken` — not in `.env`.
 
 ## Stack
 - **Expo Router v4** — file-based routing under `app/`

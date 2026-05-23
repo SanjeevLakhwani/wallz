@@ -46,12 +46,7 @@ module.exports = {
           locationWhenInUsePermission: 'Wallz uses your location to show nearby markers.',
         },
       ],
-      [
-        '@rnmapbox/maps',
-        {
-          RNMapboxMapsDownloadToken: process.env.MAPBOX_SECRET_TOKEN ?? '',
-        },
-      ],
+      '@rnmapbox/maps',
     ],
     experiments: {
       typedRoutes: true,
