@@ -7,7 +7,6 @@ import { useMapCells, getMarkersInCell, SortOption } from '@/hooks/useMarkers';
 import { useMarkerStore, Marker } from '@/stores/markerStore';
 import { useAuthStore } from '@/stores/authStore';
 import { daysUntilExpiry } from '@/lib/marker';
-import { geohashCenter } from '@/lib/geohash';
 
 function zoomToPrecision(zoom: number): number {
   if (zoom < 4) return 2;
@@ -52,11 +51,7 @@ export default function MapScreen() {
       }
     }
     return Array.from(agg.entries()).map(([geohash, { count, discoveredCount, latSum, lngSum }]) => ({
-      geohash,
-      count,
-      discoveredCount,
-      lat: latSum / count,
-      lng: lngSum / count,
+      geohash, count, discoveredCount, lat: latSum / count, lng: lngSum / count,
     }));
   }, [cells, zoom]);
 
@@ -80,6 +75,10 @@ export default function MapScreen() {
         styleURL={MapboxGL.StyleURL.Dark}
         onMapIdle={(state: any) => {
           const z = state.properties?.zoom ?? state.properties?.zoomLevel;
+          if (z != null) setZoom(z);
+        }}
+        onRegionIsChanging={(feature: any) => {
+          const z = feature.properties?.zoomLevel;
           if (z != null) setZoom(z);
         }}
       >

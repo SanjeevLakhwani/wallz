@@ -37,11 +37,9 @@ export function useMapCells() {
 
     const totals: Record<string, number> = {};
     const discovered: Record<string, number> = {};
-    const idToGeohash: Record<string, string> = {};
 
     for (const row of markersRes.data) {
       totals[row.geohash] = (totals[row.geohash] ?? 0) + 1;
-      idToGeohash[row.id] = row.geohash;
       if (discoveredIds.has(row.id)) {
         discovered[row.geohash] = (discovered[row.geohash] ?? 0) + 1;
       }
