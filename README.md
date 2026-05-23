@@ -36,9 +36,9 @@ wallz/
 
 ```bash
 cd mobile
-npm install
-cp .env.example .env   # fill in Supabase + Mapbox keys
-npx expo prebuild
+npm install --legacy-peer-deps
+cp .env.example .env   # fill in all 4 keys (see mobile/README.md)
+npx expo prebuild --clean
 npx expo run:ios
 ```
 

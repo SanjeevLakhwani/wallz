@@ -71,13 +71,10 @@ cp .env.example .env
 EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 EXPO_PUBLIC_MAPBOX_TOKEN=pk.eyJ1...your-public-mapbox-token
+RNMAPBOX_MAPS_DOWNLOAD_TOKEN=sk.eyJ1...your-secret-mapbox-token
 ```
 
-Also put your Mapbox **secret** token in `app.json`:
-
-```json
-["@rnmapbox/maps", { "RNMapboxMapsDownloadToken": "sk.eyJ1..." }]
-```
+`RNMAPBOX_MAPS_DOWNLOAD_TOKEN` is a Mapbox **secret** token with the `DOWNLOADS:READ` scope — create one at mapbox.com → Account → Access tokens. It is read by `app.config.js` at prebuild time and never committed.
 
 ### 2. Supabase: run migration
 
@@ -105,13 +102,19 @@ This auto-sets `approved_at` and `expires_at = now() + 30 days` when a marker is
 ### 4. Install dependencies
 
 ```bash
-npm install
+npm install --legacy-peer-deps
 ```
 
-### 5. Build and run (Mapbox requires native build)
+> React 19 peer dep conflicts with some packages — `--legacy-peer-deps` required.
+
+### 5. Install iOS simulator (first time only)
+
+Open Xcode → Settings → Platforms → **+** → download iOS 18.
+
+### 6. Build and run (Mapbox requires native build)
 
 ```bash
-npx expo prebuild
+npx expo prebuild --clean
 npx expo run:ios     # or run:android
 ```
 
