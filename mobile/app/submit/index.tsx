@@ -24,6 +24,11 @@ export default function SubmitScreen() {
   const deepLink = markerDeepLink(markerCode);
 
   const pickPhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Camera access is required to photo your tag.');
+      return;
+    }
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: 'images',
       quality: 0.8,
@@ -50,34 +55,43 @@ export default function SubmitScreen() {
     setLoading(true);
 
     try {
-      // Upload photo
-      const ext = photo.split('.').pop();
+      // Upload photo via XHR — fetch+blob and FormData both fail in React Native
+      const ext = photo.split('.').pop() ?? 'jpg';
       const path = `markers/${user.id}/${markerCode}.${ext}`;
-      const response = await fetch(photo);
-      const blob = await response.blob();
-      const { error: uploadError } = await supabase.storage
-        .from('marker-photos')
-        .upload(path, blob, { contentType: `image/${ext}` });
-      if (uploadError) throw uploadError;
+      const { data: { session } } = await supabase.auth.getSession();
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `${supabaseUrl}/storage/v1/object/marker-photos/${path}`);
+        xhr.setRequestHeader('Authorization', `Bearer ${session?.access_token}`);
+        xhr.setRequestHeader('Content-Type', `image/${ext}`);
+        xhr.onload = () => xhr.status === 200 ? resolve() : reject(new Error(xhr.responseText));
+        xhr.onerror = () => reject(new Error('Upload failed'));
+        xhr.send({ uri: photo, type: `image/${ext}`, name: `photo.${ext}` } as any);
+      });
 
       const { data: { publicUrl } } = supabase.storage
         .from('marker-photos')
         .getPublicUrl(path);
 
-      // Insert marker record
+      // Insert marker record — auto-approved for testing
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
       const { error: insertError } = await supabase.from('markers').insert({
         creator_id: user.id,
         marker_code: markerCode,
         area_name: areaName,
         geohash,
         photo_url: publicUrl,
-        status: 'pending',
+        status: 'approved',
+        approved_at: now.toISOString(),
+        expires_at: expiresAt,
       });
       if (insertError) throw insertError;
 
       Alert.alert(
-        'Submitted!',
-        'Your tag is pending approval. Once approved it goes live on the map for 30 days.',
+        'Tag live!',
+        'Your tag is now live on the map for 30 days.',
         [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
       );
     } catch (err: any) {
