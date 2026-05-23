@@ -9,7 +9,7 @@ module.exports = {
     userInterfaceStyle: 'dark',
     ios: {
       supportsTablet: false,
-      bundleIdentifier: 'com.wallz.app',
+      bundleIdentifier: 'com.wallz.app.slakhwani',
       infoPlist: {
         NSCameraUsageDescription: 'Wallz uses your camera to scan fiducial markers.',
         NSLocationWhenInUseUsageDescription: 'Wallz uses your location to show nearby markers on the map.',
