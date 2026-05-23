@@ -36,6 +36,7 @@ module.exports = {
     },
     plugins: [
       'expo-router',
+      'expo-system-ui',
       'expo-secure-store',
       'expo-splash-screen',
       'expo-camera',
