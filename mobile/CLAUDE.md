@@ -7,7 +7,7 @@ Expo 56 + TypeScript app. Read https://docs.expo.dev/versions/v56.0.0/ before to
 npm install --legacy-peer-deps   # --legacy-peer-deps required (React 19 peer conflicts)
 cp .env.example .env             # fill all 4 keys before running
 npx expo prebuild --clean        # required — Mapbox needs native build
-npx expo run:ios                 # or run:android
+npx expo run:ios
 ```
 
 ## Env vars (all required)

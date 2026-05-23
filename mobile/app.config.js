@@ -16,21 +16,6 @@ module.exports = {
         NSPhotoLibraryUsageDescription: 'Wallz needs photo access to upload marker photos.',
       },
     },
-    android: {
-      adaptiveIcon: {
-        backgroundColor: '#0a0a0a',
-        foregroundImage: './assets/android-icon-foreground.png',
-        backgroundImage: './assets/android-icon-background.png',
-        monochromeImage: './assets/android-icon-monochrome.png',
-      },
-      package: 'com.wallz.app',
-      permissions: [
-        'android.permission.CAMERA',
-        'android.permission.ACCESS_FINE_LOCATION',
-        'android.permission.READ_EXTERNAL_STORAGE',
-      ],
-      predictiveBackGestureEnabled: false,
-    },
     web: {
       favicon: './assets/favicon.png',
     },

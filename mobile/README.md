@@ -115,7 +115,7 @@ Open Xcode → Settings → Platforms → **+** → download iOS 18.
 
 ```bash
 npx expo prebuild --clean
-npx expo run:ios     # or run:android
+npx expo run:ios
 ```
 
 ---
