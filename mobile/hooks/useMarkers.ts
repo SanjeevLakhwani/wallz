@@ -51,16 +51,14 @@ export function useMapCells() {
 export async function getMarkersInCell(geohash: string, sort: SortOption = 'recent') {
   let query = supabase
     .from('markers')
-    .select(`
-      *,
-      marker_stats (like_count, discovery_count, comment_count)
-    `)
+    .select('*')
     .eq('status', 'approved')
     .eq('geohash', geohash);
 
   if (sort === 'recent') query = query.order('approved_at', { ascending: false });
   if (sort === 'expiring') query = query.order('expires_at', { ascending: true });
 
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) console.error('getMarkersInCell error:', error.message);
   return data ?? [];
 }

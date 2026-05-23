@@ -20,13 +20,12 @@ export default function MarkerDetailScreen() {
   useEffect(() => {
     supabase
       .from('markers')
-      .select('*, marker_stats(like_count, discovery_count, comment_count)')
+      .select('*')
       .eq('id', id)
       .single()
       .then(({ data }) => {
         if (data) {
           setMarker(data as Marker);
-          setLikeCount(data.marker_stats?.like_count ?? 0);
         }
       });
 
@@ -75,7 +74,7 @@ export default function MarkerDetailScreen() {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <TouchableOpacity style={styles.back} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.back} onPress={() => router.replace('/(tabs)')}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
 
@@ -100,7 +99,7 @@ export default function MarkerDetailScreen() {
             </TouchableOpacity>
             <View style={styles.stat}>
               <Text style={styles.statText}>
-                {(marker as any).marker_stats?.discovery_count ?? 0} found
+                {(marker as any).discovery_count ?? 0} found
               </Text>
             </View>
           </View>
