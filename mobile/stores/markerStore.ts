@@ -22,6 +22,7 @@ export type Marker = {
 export type GeohashCell = {
   geohash: string;
   count: number;
+  discoveredCount: number;
   lat: number;
   lng: number;
 };
