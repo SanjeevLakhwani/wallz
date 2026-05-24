@@ -42,6 +42,7 @@ export function useComments(markerId: string) {
   const addComment = async (body: string) => {
     if (!user) return;
     await supabase.from('comments').insert({ marker_id: markerId, user_id: user.id, body });
+    await fetchComments();
   };
 
   return { comments, loading, addComment };
