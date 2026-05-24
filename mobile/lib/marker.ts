@@ -4,11 +4,11 @@ const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 export const generateMarkerCode = (): string =>
   Array.from({ length: 7 }, () => CHARSET[Math.floor(Math.random() * CHARSET.length)]).join('');
 
-export const markerDeepLink = (code: string): string => `wallz://scan/${code}`;
+export const markerDeepLink = (code: string): string => `cairn://scan/${code}`;
 
 // Accept both new 7-char codes and legacy 36-char UUIDs
 export const parseMarkerDeepLink = (url: string): string | null => {
-  const m = url.match(/wallz:\/\/scan\/([A-Z0-9]{7}|[a-f0-9-]{36})/);
+  const m = url.match(/cairn:\/\/scan\/([A-Z0-9]{7}|[a-f0-9-]{36})/);
   return m ? m[1] : null;
 };
 

@@ -77,7 +77,7 @@ export default function ScanScreen() {
 
   useEffect(() => {
     if (!deepLinkCode || lockedRef.current) return;
-    const code = parseMarkerDeepLink(`wallz://scan/${deepLinkCode}`) ?? deepLinkCode;
+    const code = parseMarkerDeepLink(`cairn://scan/${deepLinkCode}`) ?? deepLinkCode;
     handleCode(code);
   }, [deepLinkCode, handleCode]);
 
@@ -129,7 +129,7 @@ export default function ScanScreen() {
       <View style={styles.overlay}>
         <Text style={styles.overlayTitle}>SCAN RING TAG</Text>
         <View style={styles.frame} />
-        <Text style={styles.overlayHint}>Point camera at a Wallz Ring Tag</Text>
+        <Text style={styles.overlayHint}>Point camera at a Cairn Ring Tag</Text>
         {pendingCode && !loading && (
           <TouchableOpacity style={styles.btn} onPress={reset}>
             <Text style={styles.btnText}>Scan Again</Text>

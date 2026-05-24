@@ -21,7 +21,7 @@ export default function LoginScreen() {
       behavior="padding"
     >
       <View style={styles.inner}>
-        <Text style={styles.logo}>WALLZ</Text>
+        <Text style={styles.logo}>CAIRN</Text>
         <Text style={styles.tagline}>Find the tags. Keep them forever.</Text>
 
         <TextInput

@@ -32,7 +32,7 @@ export default function RegisterScreen() {
       behavior="padding"
     >
       <View style={styles.inner}>
-        <Text style={styles.logo}>WALLZ</Text>
+        <Text style={styles.logo}>CAIRN</Text>
         <Text style={styles.tagline}>Join the hunt.</Text>
 
         <TextInput

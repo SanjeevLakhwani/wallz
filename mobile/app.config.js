@@ -1,22 +1,22 @@
 module.exports = {
   expo: {
-    name: 'Wallz',
-    slug: 'wallz',
+    name: 'Cairn',
+    slug: 'cairn',
     version: '1.0.0',
-    scheme: 'wallz',
+    scheme: 'cairn',
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'dark',
     android: {
-      package: 'com.wallz.app.slakhwani',
+      package: 'com.cairn.app.slakhwani',
     },
     ios: {
       supportsTablet: false,
-      bundleIdentifier: 'com.wallz.app.slakhwani',
+      bundleIdentifier: 'com.cairn.app.slakhwani',
       infoPlist: {
-        NSCameraUsageDescription: 'Wallz uses your camera to scan fiducial markers.',
-        NSLocationWhenInUseUsageDescription: 'Wallz uses your location to show nearby markers on the map.',
-        NSPhotoLibraryUsageDescription: 'Wallz needs photo access to upload marker photos.',
+        NSCameraUsageDescription: 'Cairn uses your camera to scan fiducial markers.',
+        NSLocationWhenInUseUsageDescription: 'Cairn uses your location to show nearby markers on the map.',
+        NSPhotoLibraryUsageDescription: 'Cairn needs photo access to upload marker photos.',
       },
     },
     web: {
@@ -30,7 +30,7 @@ module.exports = {
       [
         'react-native-vision-camera',
         {
-          cameraPermissionText: 'Wallz uses your camera to scan Ring Tag markers.',
+          cameraPermissionText: 'Cairn uses your camera to scan Ring Tag markers.',
           enableFrameProcessors: true,
           enableCodeScanner: false,
         },
@@ -38,7 +38,7 @@ module.exports = {
       [
         'expo-location',
         {
-          locationWhenInUsePermission: 'Wallz uses your location to show nearby markers.',
+          locationWhenInUsePermission: 'Cairn uses your location to show nearby markers.',
         },
       ],
       '@rnmapbox/maps',

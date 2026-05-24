@@ -9,7 +9,7 @@ const CY = 200;
 const DEG = Math.PI / 180;
 
 const RING_R = [70, 90, 110, 130, 150] as const;
-const RING_COLOR = ['#5855f4', '#7c3aed', '#9333ea', '#db2777', '#ea580c'] as const;
+const RING_COLOR = ['#214d9a', '#2e5fc0', '#4f6eff', '#1ec8f5', '#00dbfd'] as const;
 const STROKE_W = 12;
 
 // QR fits inside innermost ring (r=70), with margin
@@ -36,13 +36,13 @@ export const RingTagGenerator = forwardRef<Svg, Props>(function RingTagGenerator
 ) {
   return (
     <Svg ref={ref} width={size} height={size} viewBox={`0 0 ${S} ${S}`}>
-      <Rect width={S} height={S} fill="#0f0a1e" />
+      <Rect width={S} height={S} fill="#04101e" />
 
       <Rect
         x={5} y={5}
         width={S - 10} height={S - 10}
         fill="none"
-        stroke="#3a3060"
+        stroke="#0e2a50"
         strokeWidth={1.5}
       />
 

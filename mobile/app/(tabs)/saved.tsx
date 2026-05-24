@@ -161,7 +161,7 @@ export default function SavedScreen() {
             {qrTag && (
               <View style={styles.qrWrap}>
                 <RingTagGenerator code={qrTag.marker_code} size={220} />
-                <Text style={styles.wallzLabel}>WALLZ</Text>
+                <Text style={styles.wallzLabel}>CAIRN</Text>
               </View>
             )}
             <Text style={styles.modalHint}>Print and place this where your artwork is</Text>

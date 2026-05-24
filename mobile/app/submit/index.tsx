@@ -104,7 +104,7 @@ export default function SubmitScreen() {
         <Text style={styles.hint}>Screenshot and print this (min 8×8 cm, matte paper). Place it somewhere in the world.</Text>
         <View style={styles.tagContainer}>
           <RingTagGenerator code={markerCode} size={200} />
-          <Text style={styles.wallzLabel}>WALLZ</Text>
+          <Text style={styles.wallzLabel}>CAIRN</Text>
         </View>
         <Text style={styles.codeText}>{markerCode}</Text>
         {step === 'tag' && (
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   tagContainer: {
     alignSelf: 'center',
     padding: 16,
-    backgroundColor: '#0f0a1e',
+    backgroundColor: '#04101e',
     borderWidth: 1,
     borderColor: '#2a2a2a',
     borderRadius: 12,
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   wallzLabel: { color: '#fff', fontWeight: '900', letterSpacing: 6, marginTop: 10, fontSize: 13 },
-  codeText: { color: '#7c3aed', fontSize: 14, fontWeight: '700', textAlign: 'center', letterSpacing: 3, marginBottom: 16 },
+  codeText: { color: '#4f6eff', fontSize: 14, fontWeight: '700', textAlign: 'center', letterSpacing: 3, marginBottom: 16 },
   btn: {
     backgroundColor: '#fff',
     borderRadius: 8,

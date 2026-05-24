@@ -157,7 +157,7 @@ export default function MyTagScreen() {
             color="#fff"
             backgroundColor="#0a0a0a"
           />
-          <Text style={styles.wallzLabel}>WALLZ</Text>
+          <Text style={styles.wallzLabel}>CAIRN</Text>
         </View>
         <Text style={styles.hint}>Print this and place it where your artwork is</Text>
       </View>

@@ -126,7 +126,7 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
 
       {(loadingInfo || !referenceImageBase64) && (
         <View style={styles.loadingRow}>
-          <ActivityIndicator color="#7c3aed" />
+          <ActivityIndicator color="#4f6eff" />
           <Text style={styles.loadingText}>Initialising AR…</Text>
         </View>
       )}
