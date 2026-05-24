@@ -14,21 +14,25 @@ export default function MarkerDetailScreen() {
   const [marker, setMarker] = useState<Marker | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
+  const [discovered, setDiscovered] = useState(false);
   const [commentText, setCommentText] = useState('');
   const { comments, addComment } = useComments(id);
 
   useEffect(() => {
     supabase
       .from('markers')
-      .select('*, marker_stats(like_count, discovery_count, comment_count)')
+      .select('*')
       .eq('id', id)
       .single()
       .then(({ data }) => {
-        if (data) {
-          setMarker(data as Marker);
-          setLikeCount(data.marker_stats?.like_count ?? 0);
-        }
+        if (data) setMarker(data as Marker);
       });
+
+    supabase
+      .from('likes')
+      .select('user_id', { count: 'exact', head: true })
+      .eq('marker_id', id)
+      .then(({ count }) => setLikeCount(count ?? 0));
 
     if (user) {
       supabase
@@ -38,6 +42,14 @@ export default function MarkerDetailScreen() {
         .eq('user_id', user.id)
         .maybeSingle()
         .then(({ data }) => setLiked(!!data));
+
+      supabase
+        .from('discoveries')
+        .select('marker_id')
+        .eq('marker_id', id)
+        .eq('user_id', user.id)
+        .maybeSingle()
+        .then(({ data }) => setDiscovered(!!data));
     }
   }, [id]);
 
@@ -75,13 +87,18 @@ export default function MarkerDetailScreen() {
       style={styles.container}
       behavior="padding"
     >
-      <TouchableOpacity style={styles.back} onPress={() => router.back()}>
+      <TouchableOpacity style={styles.back} onPress={() => router.replace('/(tabs)')}>
         <Text style={styles.backText}>← Back</Text>
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {marker.photo_url && (
+        {discovered && marker.photo_url ? (
           <Image source={{ uri: marker.photo_url }} style={styles.photo} />
+        ) : (
+          <View style={styles.lockedPhoto}>
+            <Text style={styles.lockedIcon}>🔒</Text>
+            <Text style={styles.lockedText}>Scan the QR code in person to reveal</Text>
+          </View>
         )}
 
         <View style={styles.body}>
@@ -100,7 +117,7 @@ export default function MarkerDetailScreen() {
             </TouchableOpacity>
             <View style={styles.stat}>
               <Text style={styles.statText}>
-                {(marker as any).marker_stats?.discovery_count ?? 0} found
+                {(marker as any).discovery_count ?? 0} found
               </Text>
             </View>
           </View>
@@ -139,6 +156,16 @@ const styles = StyleSheet.create({
   backText: { color: '#888', fontSize: 15 },
   scroll: { paddingBottom: 80 },
   photo: { width: '100%', height: 300, resizeMode: 'cover' },
+  lockedPhoto: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#111',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+  },
+  lockedIcon: { fontSize: 32 },
+  lockedText: { color: '#555', fontSize: 13, textAlign: 'center', paddingHorizontal: 32 },
   body: { padding: 20 },
   areaName: { color: '#fff', fontSize: 24, fontWeight: '900', marginBottom: 8 },
   expiry: { color: '#f5a623', fontSize: 13, marginBottom: 16 },
