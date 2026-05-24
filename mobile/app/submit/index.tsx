@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
   StyleSheet, Alert, ActivityIndicator, ScrollView,
@@ -6,6 +6,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import type Svg from 'react-native-svg';
+import MapboxGL from '@rnmapbox/maps';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { generateMarkerCode } from '@/lib/marker';
@@ -13,6 +14,8 @@ import { toGeohash } from '@/lib/geohash';
 import { RingTagGenerator } from '@/components/RingTagGenerator';
 import { useRingTagSave } from '@/hooks/useRingTagSave';
 import * as Location from 'expo-location';
+
+MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN ?? '');
 
 type Step = 'photo' | 'location' | 'approving' | 'tag';
 
@@ -26,6 +29,19 @@ export default function SubmitScreen() {
   const [artwork, setArtwork] = useState<string | null>(null);
   const [areaName, setAreaName] = useState('');
   const [geohash, setGeohash] = useState<string | null>(null);
+  const [initialCoords, setInitialCoords] = useState<[number, number]>([-122.4194, 37.7749]);
+
+  // Center map on user when entering location step
+  useEffect(() => {
+    if (step !== 'location') return;
+    Location.requestForegroundPermissionsAsync().then(({ status }) => {
+      if (status !== 'granted') return;
+      Location.getCurrentPositionAsync({}).then(loc => {
+        setInitialCoords([loc.coords.longitude, loc.coords.latitude]);
+        setGeohash(toGeohash(loc.coords.latitude, loc.coords.longitude));
+      });
+    });
+  }, [step]);
 
   const pickArtwork = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -35,16 +51,6 @@ export default function SubmitScreen() {
     }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', quality: 1 });
     if (!result.canceled) setArtwork(result.assets[0].uri);
-  };
-
-  const detectLocation = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Location needed to set tag area.');
-      return;
-    }
-    const loc = await Location.getCurrentPositionAsync({});
-    setGeohash(toGeohash(loc.coords.latitude, loc.coords.longitude));
   };
 
   const uploadAndInsert = async () => {
@@ -125,32 +131,58 @@ export default function SubmitScreen() {
 
   // ── Step: location ────────────────────────────────────────────────────────
   if (step === 'location') return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.back} onPress={() => setStep('photo')}>
-        <Text style={styles.backText}>← Back</Text>
-      </TouchableOpacity>
-      <Text style={styles.title}>New Tag</Text>
-      <Text style={styles.stepLabel}>2 · Where is it?</Text>
-      <Text style={styles.hint}>Give a rough area name so others can find it.</Text>
+    <View style={styles.locationRoot}>
+      {/* Header */}
+      <View style={styles.locationHeader}>
+        <TouchableOpacity style={styles.back} onPress={() => setStep('photo')}>
+          <Text style={styles.backText}>← Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>New Tag</Text>
+        <Text style={styles.stepLabel}>2 · Pin the location</Text>
+        <Text style={styles.hint}>Pan the map to where your tag is placed.</Text>
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Area name (e.g. Downtown SF)"
-        placeholderTextColor="#555"
-        value={areaName}
-        onChangeText={setAreaName}
-      />
-      <TouchableOpacity style={[styles.btn, styles.btnSecondary]} onPress={detectLocation}>
-        <Text style={styles.btnTextLight}>
-          {geohash ? '✓ Location set' : '📍 Use Current Location'}
-        </Text>
-      </TouchableOpacity>
+      {/* Map */}
+      <View style={styles.mapWrapper}>
+        <MapboxGL.MapView
+          style={StyleSheet.absoluteFill}
+          styleURL={MapboxGL.StyleURL.Dark}
+          logoEnabled={false}
+          attributionEnabled={false}
+          onMapIdle={(state: any) => {
+            const [lng, lat] = state.properties.center;
+            setGeohash(toGeohash(lat, lng));
+          }}
+        >
+          <MapboxGL.Camera
+            defaultSettings={{ centerCoordinate: initialCoords, zoomLevel: 14 }}
+          />
+        </MapboxGL.MapView>
 
-      {areaName && geohash && (
-        <TouchableOpacity style={[styles.btn, { marginTop: 12 }]} onPress={handleSubmit}>
+        {/* Center crosshair pin */}
+        <View style={styles.pinWrapper} pointerEvents="none">
+          <View style={styles.pinDot} />
+          <View style={styles.pinStem} />
+        </View>
+      </View>
+
+      {/* Footer */}
+      <View style={styles.locationFooter}>
+        <TextInput
+          style={styles.input}
+          placeholder="Area name (e.g. Downtown SF)"
+          placeholderTextColor="#555"
+          value={areaName}
+          onChangeText={setAreaName}
+        />
+        <TouchableOpacity
+          style={[styles.btn, (!areaName || !geohash) && { opacity: 0.4 }]}
+          onPress={handleSubmit}
+          disabled={!areaName || !geohash}
+        >
           <Text style={styles.btnText}>Submit →</Text>
         </TouchableOpacity>
-      )}
+      </View>
     </View>
   );
 
@@ -190,6 +222,38 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0a0a0a', padding: 24, paddingTop: 60 },
   content: { paddingBottom: 60 },
   centered: { justifyContent: 'center', alignItems: 'center' },
+
+  // Location step — no padding on root so map goes edge-to-edge
+  locationRoot: { flex: 1, backgroundColor: '#0a0a0a' },
+  locationHeader: { paddingHorizontal: 24, paddingTop: 60, paddingBottom: 8 },
+  mapWrapper: { flex: 1, position: 'relative' },
+  locationFooter: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
+
+  // Center pin
+  pinWrapper: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pinDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#4f6eff',
+    borderWidth: 3,
+    borderColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  pinStem: {
+    width: 2,
+    height: 10,
+    backgroundColor: '#fff',
+    opacity: 0.7,
+  },
+
   back: { marginBottom: 8 },
   backText: { color: '#888', fontSize: 15 },
   title: { color: '#fff', fontSize: 28, fontWeight: '900', marginBottom: 32 },
