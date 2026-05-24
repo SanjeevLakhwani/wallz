@@ -42,6 +42,14 @@ module.exports = {
         },
       ],
       '@rnmapbox/maps',
+      [
+        'expo-media-library',
+        {
+          photosPermission: 'Cairn saves Ring Tag images to your photo library.',
+          savePhotosPermission: 'Cairn saves Ring Tag images to your photo library.',
+          isAccessMediaLocationEnabled: false,
+        },
+      ],
     ],
     experiments: {
       typedRoutes: true,

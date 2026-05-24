@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image,
   StyleSheet, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
+import type Svg from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { generateMarkerCode } from '@/lib/marker';
 import { toGeohash } from '@/lib/geohash';
 import { RingTagGenerator } from '@/components/RingTagGenerator';
+import { useRingTagSave } from '@/hooks/useRingTagSave';
 import * as Location from 'expo-location';
 
 type Step = 'tag' | 'details' | 'submit';
@@ -19,6 +21,8 @@ export default function SubmitScreen() {
   const user = useAuthStore((s) => s.user);
   const [step, setStep] = useState<Step>('tag');
   const [markerCode] = useState(() => generateMarkerCode());
+  const ringTagRef = useRef<Svg>(null);
+  const { save: saveToPhotos, saving: savingPhoto } = useRingTagSave(ringTagRef);
   const [artwork, setArtwork] = useState<string | null>(null);
   const [areaName, setAreaName] = useState('');
   const [geohash, setGeohash] = useState<string | null>(null);
@@ -103,10 +107,15 @@ export default function SubmitScreen() {
         <Text style={styles.stepLabel}>1 · Your Unique Ring Tag</Text>
         <Text style={styles.hint}>Screenshot and print this (min 8×8 cm, matte paper). Place it somewhere in the world.</Text>
         <View style={styles.tagContainer}>
-          <RingTagGenerator code={markerCode} size={200} />
+          <RingTagGenerator ref={ringTagRef} code={markerCode} size={200} />
           <Text style={styles.wallzLabel}>CAIRN</Text>
         </View>
         <Text style={styles.codeText}>{markerCode}</Text>
+        <TouchableOpacity style={[styles.btn, styles.btnSecondary]} onPress={saveToPhotos} disabled={savingPhoto}>
+          {savingPhoto
+            ? <ActivityIndicator color="#fff" size="small" />
+            : <Text style={styles.btnTextLight}>Save to Photos</Text>}
+        </TouchableOpacity>
         {step === 'tag' && (
           <TouchableOpacity style={styles.btn} onPress={() => setStep('details')}>
             <Text style={styles.btnText}>I've placed it →</Text>

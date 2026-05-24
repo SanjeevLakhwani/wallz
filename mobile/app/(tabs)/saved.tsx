@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import type Svg from 'react-native-svg';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
 import { daysUntilExpiry } from '@/lib/marker';
 import { RingTagGenerator } from '@/components/RingTagGenerator';
+import { useRingTagSave } from '@/hooks/useRingTagSave';
 
 type SavedMarker = {
   discovered_at: string;
@@ -36,6 +38,8 @@ export default function SavedScreen() {
   const [myTags, setMyTags] = useState<MyTag[]>([]);
   const [loading, setLoading] = useState(true);
   const [qrTag, setQrTag] = useState<MyTag | null>(null);
+  const ringTagRef = useRef<Svg>(null);
+  const { save: saveToPhotos, saving: savingPhoto } = useRingTagSave(ringTagRef);
 
   useEffect(() => {
     if (!user) return;
@@ -160,11 +164,16 @@ export default function SavedScreen() {
             <Text style={styles.modalTitle}>{qrTag?.area_name}</Text>
             {qrTag && (
               <View style={styles.qrWrap}>
-                <RingTagGenerator code={qrTag.marker_code} size={220} />
+                <RingTagGenerator ref={ringTagRef} code={qrTag.marker_code} size={220} />
                 <Text style={styles.wallzLabel}>CAIRN</Text>
               </View>
             )}
             <Text style={styles.modalHint}>Print and place this where your artwork is</Text>
+            <TouchableOpacity style={styles.saveBtn} onPress={saveToPhotos} disabled={savingPhoto}>
+              {savingPhoto
+                ? <ActivityIndicator color="#fff" size="small" />
+                : <Text style={styles.saveBtnText}>Save to Photos</Text>}
+            </TouchableOpacity>
             <TouchableOpacity style={styles.closeBtn} onPress={() => setQrTag(null)}>
               <Text style={styles.closeBtnText}>Close</Text>
             </TouchableOpacity>
@@ -256,6 +265,17 @@ const styles = StyleSheet.create({
   },
   wallzLabel: { color: '#fff', fontWeight: '900', letterSpacing: 6, fontSize: 13 },
   modalHint: { color: '#555', fontSize: 12, textAlign: 'center' },
+  saveBtn: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    width: '100%',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  saveBtnText: { color: '#fff', fontWeight: '700' },
   closeBtn: {
     backgroundColor: '#fff',
     borderRadius: 8,
