@@ -43,9 +43,8 @@ export default function ScanScreen() {
           setPhase('ar');
           break;
         case 'already_found':
-          Alert.alert('Already in collection', 'You found this one before.', [
-            { text: 'OK', onPress: reset },
-          ]);
+          setDiscoveredMarkerId(result.markerId);
+          setPhase('ar');
           break;
         case 'expired':
           Alert.alert('Tag expired', 'This tag expired 30 days after it was placed.', [
