@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import QRCode from 'react-native-qrcode-svg';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
-import { daysUntilExpiry, markerDeepLink } from '@/lib/marker';
+import { daysUntilExpiry } from '@/lib/marker';
+import { RingTagGenerator } from '@/components/RingTagGenerator';
 
 type SavedMarker = {
   discovered_at: string;
@@ -140,7 +140,7 @@ export default function SavedScreen() {
                 </View>
                 {expired && <Text style={styles.expiredBadge}>EXPIRED</Text>}
                 <TouchableOpacity style={styles.qrBtn} onPress={() => setQrTag(item)}>
-                  <Text style={styles.qrBtnText}>QR</Text>
+                  <Text style={styles.qrBtnText}>Tag</Text>
                 </TouchableOpacity>
               </View>
             );
@@ -155,12 +155,7 @@ export default function SavedScreen() {
             <Text style={styles.modalTitle}>{qrTag?.area_name}</Text>
             {qrTag && (
               <View style={styles.qrWrap}>
-                <QRCode
-                  value={markerDeepLink(qrTag.marker_code)}
-                  size={220}
-                  color="#fff"
-                  backgroundColor="#0a0a0a"
-                />
+                <RingTagGenerator code={qrTag.marker_code} size={220} />
                 <Text style={styles.wallzLabel}>WALLZ</Text>
               </View>
             )}
