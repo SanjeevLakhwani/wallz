@@ -75,20 +75,17 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
   const handleAnchorUpdated = useCallback(
     (e: { nativeEvent: { normalX: number; normalY: number; visible: boolean } }) => {
       const { normalX, normalY, visible } = e.nativeEvent;
-      const inViewport = normalX >= 0 && normalX <= 1 && normalY >= 0 && normalY <= 1;
-      const isVisible = visible && inViewport;
-      setAnchorVisible(isVisible);
-      if (isVisible) setAnchorPos({ x: normalX * screenW, y: normalY * screenH });
+      if (!visible) { setAnchorVisible(false); return; }
+      setAnchorVisible(true);
+      setAnchorPos({ x: normalX * screenW, y: normalY * screenH });
     },
     [screenW, screenH],
   );
 
   const cardW = Math.round(screenW * 0.62);
   const cardH = Math.round(screenH * 0.42);
-  const cardX = anchorPos
-    ? Math.max(8, Math.min(screenW - cardW - 8, anchorPos.x - cardW / 2))
-    : (screenW - cardW) / 2;
-  const cardY = anchorPos ? Math.max(80, anchorPos.y - cardH - 24) : (screenH - cardH) / 2;
+  const cardX = anchorPos ? anchorPos.x - cardW / 2 : (screenW - cardW) / 2;
+  const cardY = anchorPos ? anchorPos.y - cardH - 24 : (screenH - cardH) / 2;
 
   return (
     <View style={styles.container}>
