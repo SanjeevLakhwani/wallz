@@ -162,8 +162,8 @@ export default function SubmitScreen() {
           />
         </MapboxGL.MapView>
 
-        {/* Center crosshair pin */}
-        <View style={styles.pinWrapper} pointerEvents="none">
+        {/* Center pin — tip points at exact map center */}
+        <View style={styles.pinCenter} pointerEvents="none">
           <View style={styles.pinDot} />
           <View style={styles.pinStem} />
         </View>
@@ -232,11 +232,13 @@ const styles = StyleSheet.create({
   mapWrapper: { flex: 1, position: 'relative' },
   locationFooter: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40 },
 
-  // Center pin
-  pinWrapper: {
-    ...StyleSheet.absoluteFillObject,
+  // Center pin — dot(18) + stem(10) = 28px total; translateY: -28 puts tip at 50%
+  pinCenter: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
     alignItems: 'center',
-    justifyContent: 'center',
+    transform: [{ translateX: -9 }, { translateY: -28 }],
   },
   pinDot: {
     width: 18,
