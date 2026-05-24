@@ -35,6 +35,7 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
   const svgRef = useRef<Svg>(null);
 
   const [referenceImageBase64, setReferenceImageBase64] = useState<string | null>(null);
+  const [camReady, setCamReady] = useState(false);
   const [anchorPos, setAnchorPos] = useState<{ x: number; y: number } | null>(null);
   const [anchorVisible, setAnchorVisible] = useState(false);
   const [markerInfo, setMarkerInfo] = useState<MarkerInfo | null>(null);
@@ -53,13 +54,21 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
       });
   }, [markerId]);
 
-  // Export Ring Tag SVG → base64 PNG for ARKit reference image registration
+  // Give VisionCamera time to fully release its AVCaptureSession before ARKit starts.
+  // iOS allows only one active camera session — overlap causes black screen.
+  useEffect(() => {
+    const t = setTimeout(() => setCamReady(true), 700);
+    return () => clearTimeout(t);
+  }, []);
+
+  // Export Ring Tag SVG → base64 PNG for ARKit reference image registration.
+  // Delay matches camReady so the SVG has time to paint off-screen.
   useEffect(() => {
     const t = setTimeout(() => {
       svgRef.current?.toDataURL((data: string) => {
         setReferenceImageBase64(data);
       });
-    }, 300);
+    }, 700);
     return () => clearTimeout(t);
   }, []);
 
@@ -86,8 +95,8 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
         <RingTagGenerator ref={svgRef} code={markerCode} size={400} />
       </View>
 
-      {/* ARKit camera + image tracker */}
-      {referenceImageBase64 && (
+      {/* ARKit camera + image tracker — wait for both SVG export and camera handoff */}
+      {referenceImageBase64 && camReady && (
         <ARTrackerView
           style={StyleSheet.absoluteFill}
           referenceImageBase64={referenceImageBase64}
@@ -124,7 +133,7 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
         </MaskedView>
       )}
 
-      {(loadingInfo || !referenceImageBase64) && (
+      {(loadingInfo || !referenceImageBase64 || !camReady) && (
         <View style={styles.loadingRow}>
           <ActivityIndicator color="#4f6eff" />
           <Text style={styles.loadingText}>Initialising AR…</Text>
