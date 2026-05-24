@@ -12,7 +12,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import Svg from 'react-native-svg';
+import Svg, { Defs, Filter, FeGaussianBlur, Rect } from 'react-native-svg';
+import MaskedView from '@react-native-masked-view/masked-view';
 import { ARTrackerView } from 'ar-tracker';
 import { supabase } from '@/lib/supabase';
 import { RingTagGenerator } from '@/components/RingTagGenerator';
@@ -71,9 +72,8 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
     [screenW, screenH],
   );
 
-  // Card position: above the projected anchor, clamped to screen edges
-  const cardW = 220;
-  const cardH = 160;
+  const cardW = Math.round(screenW * 0.62);
+  const cardH = Math.round(screenH * 0.42);
   const cardX = anchorPos
     ? Math.max(8, Math.min(screenW - cardW - 8, anchorPos.x - cardW / 2))
     : (screenW - cardW) / 2;
@@ -100,21 +100,28 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
       )}
 
       {/* Flat info card floating above the physical marker */}
-      {anchorVisible && !loadingInfo && (
-        <View
-          style={[styles.card, { left: cardX, top: cardY, width: cardW }]}
-          pointerEvents="box-none"
+      {anchorVisible && !loadingInfo && markerInfo?.photo_url && (
+        <MaskedView
+          style={[styles.card, { left: cardX, top: cardY, width: cardW, height: cardH }]}
+          maskElement={
+            <Svg width={cardW} height={cardH}>
+              <Defs>
+                <Filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+                  <FeGaussianBlur stdDeviation="18" />
+                </Filter>
+              </Defs>
+              <Rect
+                x={28} y={28}
+                width={cardW - 56} height={cardH - 56}
+                rx={20} ry={20}
+                fill="white"
+                filter="url(#soft)"
+              />
+            </Svg>
+          }
         >
-          {markerInfo?.photo_url && (
-            <Image source={{ uri: markerInfo.photo_url }} style={styles.photo} />
-          )}
-          <View style={styles.cardBody}>
-            <Text style={styles.area} numberOfLines={1}>
-              {markerInfo?.area_name ?? ''}
-            </Text>
-            <Text style={styles.code}>{markerCode}</Text>
-          </View>
-        </View>
+          <Image source={{ uri: markerInfo.photo_url }} style={styles.photo} />
+        </MaskedView>
       )}
 
       {(loadingInfo || !referenceImageBase64) && (
@@ -136,16 +143,8 @@ const styles = StyleSheet.create({
   offscreen: { position: 'absolute', left: -2000, top: -2000, opacity: 0 },
   card: {
     position: 'absolute',
-    backgroundColor: '#0f0a1eee',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#7c3aed55',
-    overflow: 'hidden',
   },
-  photo: { width: '100%', height: 100, resizeMode: 'cover' },
-  cardBody: { padding: 10 },
-  area: { color: '#fff', fontSize: 14, fontWeight: '700', marginBottom: 2 },
-  code: { color: '#7c3aed', fontSize: 11, fontWeight: '700', letterSpacing: 2 },
+  photo: { width: '100%', height: '100%', resizeMode: 'cover' },
   loadingRow: {
     position: 'absolute',
     top: '50%',
