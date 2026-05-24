@@ -1,5 +1,6 @@
 import { useRef, useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import MapboxGL from '@rnmapbox/maps';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
@@ -179,7 +180,7 @@ export default function MapScreen() {
                   {item.like_count ?? 0} likes
                 </Text>
               </View>
-              <Text style={styles.arrow}>›</Text>
+              <Ionicons name="chevron-forward" size={18} color="#555" />
             </TouchableOpacity>
           )}
         />
@@ -247,7 +248,6 @@ const styles = StyleSheet.create({
   },
   foundBadgeText: { color: '#4ade80', fontSize: 10, fontWeight: '700' },
   markerMeta: { color: '#666', fontSize: 12, marginTop: 4 },
-  arrow: { color: '#555', fontSize: 20 },
   overlay: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
