@@ -14,7 +14,11 @@ export type RingTagDetection = {
   center: { x: number; y: number } | null;
   scale: number;
   code: string | null;
+  debug?: string; // only populated when DEBUG_RING_TAG=true
 };
+
+// Flip to true to surface stage failures in onDetection
+const DEBUG_RING_TAG = true;
 
 const RINGS = 5;
 const SEGS = 12;
@@ -76,11 +80,11 @@ function findAnchorDots(
     }
   }
 
-  // Sort by size, keep top 3 with at least 3 pixels
+  // Sort by size, keep top 3 with at least 1 pixel
   const sorted = clusters.slice().sort((a, b) => b.n - a.n);
   const result: Array<{ x: number; y: number }> = [];
   for (let i = 0; i < sorted.length && result.length < 3; i++) {
-    if (sorted[i].n >= 3) result.push({ x: sorted[i].cx, y: sorted[i].cy });
+    if (sorted[i].n >= 1) result.push({ x: sorted[i].cx, y: sorted[i].cy });
   }
   return result;
 }
@@ -116,7 +120,7 @@ function tryDecode(
         w,
         h,
       );
-      ring.push(brightness > 128);
+      ring.push(brightness > 60);
     }
     rings.push(ring);
   }
@@ -154,20 +158,61 @@ export function detectRingTag(frame: Frame): RingTagDetection {
   const buf = frame.toArrayBuffer();
   const data = new Uint8Array(buf);
 
-  const dots = findAnchorDots(data, w, h, bpr, 220);
-  if (dots.length < 3) return { center: null, scale: 1, code: null };
+  const dots = findAnchorDots(data, w, h, bpr, 200);
+  if (dots.length < 3) {
+    return {
+      center: null,
+      scale: 1,
+      code: null,
+      debug: DEBUG_RING_TAG ? `dots=${dots.length} frame=${w}x${h} bpr=${bpr}` : undefined,
+    };
+  }
 
   const cx = (dots[0].x + dots[1].x + dots[2].x) / 3;
   const cy = (dots[0].y + dots[1].y + dots[2].y) / 3;
 
-  let avgDist = 0;
+  // Validate geometry: dots must be ~120° apart (±30°) and equidistant (within 40%)
+  const dists: number[] = [];
+  const angles: number[] = [];
   for (let i = 0; i < 3; i++) {
     const dx = dots[i].x - cx;
     const dy = dots[i].y - cy;
-    avgDist += Math.sqrt(dx * dx + dy * dy);
+    dists.push(Math.sqrt(dx * dx + dy * dy));
+    angles.push(Math.atan2(dy, dx));
   }
-  const scale = avgDist / 3 / ANCHOR_R;
-  if (scale < 0.01) return { center: { x: cx, y: cy }, scale, code: null };
+  const maxD = Math.max(dists[0], dists[1], dists[2]);
+  const minD = Math.min(dists[0], dists[1], dists[2]);
+  if (minD < maxD * 0.6) {
+    return {
+      center: null, scale: 1, code: null,
+      debug: DEBUG_RING_TAG ? `geom_fail dist_ratio=${( minD / maxD).toFixed(2)}` : undefined,
+    };
+  }
+  const sortedAngles = angles.slice().sort((a, b) => a - b);
+  const gaps = [
+    sortedAngles[1] - sortedAngles[0],
+    sortedAngles[2] - sortedAngles[1],
+    sortedAngles[0] + 2 * Math.PI - sortedAngles[2],
+  ];
+  const minGap = Math.min(gaps[0], gaps[1], gaps[2]);
+  const maxGap = Math.max(gaps[0], gaps[1], gaps[2]);
+  if (minGap < 1.57 || maxGap > 2.79) { // ~90° to ~160° per gap (ideally 120°)
+    return {
+      center: null, scale: 1, code: null,
+      debug: DEBUG_RING_TAG ? `geom_fail angles=${gaps.map((g) => (g * 57.3).toFixed(0)).join(',')}` : undefined,
+    };
+  }
+
+  const avgDist = (dists[0] + dists[1] + dists[2]) / 3;
+  const scale = avgDist / ANCHOR_R;
+  if (scale < 0.05) {
+    return {
+      center: { x: cx, y: cy },
+      scale,
+      code: null,
+      debug: DEBUG_RING_TAG ? `scale_too_small=${scale.toFixed(3)}` : undefined,
+    };
+  }
 
   // Try each dot as the 12-o'clock anchor — handles any 120° rotation step
   for (let topIdx = 0; topIdx < 3; topIdx++) {
@@ -175,5 +220,12 @@ export function detectRingTag(frame: Frame): RingTagDetection {
     if (code) return { center: { x: cx, y: cy }, scale, code };
   }
 
-  return { center: { x: cx, y: cy }, scale, code: null };
+  return {
+    center: { x: cx, y: cy },
+    scale,
+    code: null,
+    debug: DEBUG_RING_TAG
+      ? `checksum_fail scale=${scale.toFixed(3)} dots=[${dots.map((d) => `(${Math.round(d.x)},${Math.round(d.y)})`).join(',')}]`
+      : undefined,
+  };
 }

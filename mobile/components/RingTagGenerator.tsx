@@ -1,6 +1,7 @@
 import { forwardRef } from 'react';
-import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { encodeRingTag } from '@/lib/ringTag';
+import { View } from 'react-native';
+import Svg, { Circle, Path, Rect, ForeignObject } from 'react-native-svg';
+import QRCode from 'react-native-qrcode-svg';
 
 const S = 400;
 const CX = 200;
@@ -9,10 +10,12 @@ const DEG = Math.PI / 180;
 
 const RING_R = [70, 90, 110, 130, 150] as const;
 const RING_COLOR = ['#5855f4', '#7c3aed', '#9333ea', '#db2777', '#ea580c'] as const;
-const ANCHOR_R = 172;
 const STROKE_W = 12;
 
-// Arc segment: clockwise from a0° to a1° (both measured CW from 12 o'clock)
+// QR fits inside innermost ring (r=70), with margin
+const QR_SIZE = 100;
+const QR_OFFSET = CX - QR_SIZE / 2;
+
 function arcPath(r: number, a0: number, a1: number): string {
   const x1 = CX + r * Math.sin(a0 * DEG);
   const y1 = CY - r * Math.cos(a0 * DEG);
@@ -27,34 +30,29 @@ interface Props {
   size?: number;
 }
 
-// forwardRef exposes the Svg node so callers can call .toDataURL() for ARKit reference image export
 export const RingTagGenerator = forwardRef<Svg, Props>(function RingTagGenerator(
   { code, size = 300 },
   ref,
 ) {
-  const rings = encodeRingTag(code);
-
   return (
     <Svg ref={ref} width={size} height={size} viewBox={`0 0 ${S} ${S}`}>
-      {/* Dark background */}
       <Rect width={S} height={S} fill="#0f0a1e" />
 
-      {/* Thin white border */}
       <Rect
         x={5} y={5}
         width={S - 10} height={S - 10}
         fill="none"
-        stroke="#ffffff"
+        stroke="#3a3060"
         strokeWidth={1.5}
       />
 
-      {/* Asymmetric corner brackets — arm length encodes orientation for ARKit */}
+      {/* Corner brackets */}
       {(
         [
-          { x: 18, y: 18, rx: 1, ry: 1, a: 36 },      // TL — largest
-          { x: S - 18, y: 18, rx: -1, ry: 1, a: 28 },  // TR
-          { x: 18, y: S - 18, rx: 1, ry: -1, a: 24 },  // BL
-          { x: S - 18, y: S - 18, rx: -1, ry: -1, a: 18 }, // BR — smallest
+          { x: 18, y: 18, rx: 1, ry: 1, a: 36 },
+          { x: S - 18, y: 18, rx: -1, ry: 1, a: 28 },
+          { x: 18, y: S - 18, rx: 1, ry: -1, a: 24 },
+          { x: S - 18, y: S - 18, rx: -1, ry: -1, a: 18 },
         ] as const
       ).map(({ x, y, rx, ry, a }, i) => (
         <Path
@@ -67,36 +65,35 @@ export const RingTagGenerator = forwardRef<Svg, Props>(function RingTagGenerator
         />
       ))}
 
-      {/* Data rings — arc present = bit 1, gap = bit 0 */}
-      {rings.map((ring, r) =>
-        ring.map((bit, s) =>
-          bit ? (
-            <Path
-              key={`${r}-${s}`}
-              d={arcPath(RING_R[r], s * 30 + 3, s * 30 + 27)}
-              stroke={RING_COLOR[r]}
-              strokeWidth={STROKE_W}
-              fill="none"
-              strokeLinecap="round"
-            />
-          ) : null
-        )
+      {/* Decorative rings (visual only — QR carries the data now) */}
+      {RING_R.map((r, ri) =>
+        Array.from({ length: 12 }, (_, s) => (
+          <Path
+            key={`${ri}-${s}`}
+            d={arcPath(r, s * 30 + 3, s * 30 + 27)}
+            stroke={RING_COLOR[ri]}
+            strokeWidth={STROKE_W}
+            fill="none"
+            strokeLinecap="round"
+            opacity={0.4}
+          />
+        ))
       )}
 
-      {/* CV anchor dots: 12 o'clock (0°), 4 o'clock (120°), 8 o'clock (240°) */}
-      {([0, 120, 240] as const).map((deg) => (
-        <Circle
-          key={deg}
-          cx={CX + ANCHOR_R * Math.sin(deg * DEG)}
-          cy={CY - ANCHOR_R * Math.cos(deg * DEG)}
-          r={8}
-          fill="#ffffff"
-        />
-      ))}
+      {/* White background behind QR so it reads cleanly */}
+      <Rect
+        x={QR_OFFSET - 4} y={QR_OFFSET - 4}
+        width={QR_SIZE + 8} height={QR_SIZE + 8}
+        fill="#ffffff"
+        rx={4}
+      />
 
-      {/* Center dot */}
-      <Circle cx={CX} cy={CY} r={12} fill="#7c3aed" />
-      <Circle cx={CX} cy={CY} r={6} fill="#ffffff" />
+      {/* QR code embedded in center */}
+      <ForeignObject x={QR_OFFSET} y={QR_OFFSET} width={QR_SIZE} height={QR_SIZE}>
+        <View style={{ width: QR_SIZE, height: QR_SIZE }}>
+          <QRCode value={code} size={QR_SIZE} backgroundColor="white" color="black" />
+        </View>
+      </ForeignObject>
     </Svg>
   );
 });

@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { Camera, useCameraDevice, useCameraPermission, useFrameProcessor } from 'react-native-vision-camera';
-import { runOnJS, useSharedValue } from 'react-native-reanimated';
+import { Camera, useCameraDevice, useCameraPermission, useCodeScanner } from 'react-native-vision-camera';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { parseMarkerDeepLink } from '@/lib/marker';
 import { useDiscovery } from '@/hooks/useDiscovery';
-import { detectRingTag } from '@/lib/ringTagReader';
 import { AROverlay } from '@/components/AROverlay';
 import { ARTagView } from '@/components/ARTagView';
 
@@ -19,19 +17,14 @@ export default function ScanScreen() {
   const { discoverByCode, loading } = useDiscovery();
 
   const [phase, setPhase] = useState<ScanPhase>('scanning');
-  const [detecting, setDetecting] = useState(false);
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const [discoveredMarkerId, setDiscoveredMarkerId] = useState<string | null>(null);
 
   const lockedRef = useRef(false);
-  const lastCodeRef = useRef<string | null>(null);
-  const frameCount = useSharedValue(0);
 
   const reset = useCallback(() => {
     lockedRef.current = false;
-    lastCodeRef.current = null;
     setPhase('scanning');
-    setDetecting(false);
     setPendingCode(null);
     setDiscoveredMarkerId(null);
   }, []);
@@ -69,31 +62,19 @@ export default function ScanScreen() {
           break;
       }
     },
-    [discoverByCode, router, reset],
+    [discoverByCode, reset],
   );
 
-  const onDetection = useCallback(
-    (detected: boolean, code: string | null) => {
-      if (lockedRef.current) return;
-      setDetecting(detected);
-      if (code && code !== lastCodeRef.current) {
-        lastCodeRef.current = code;
-        handleCode(code);
-      }
+  const codeScanner = useCodeScanner({
+    codeTypes: ['qr'],
+    onCodeScanned: (codes) => {
+      if (lockedRef.current || codes.length === 0) return;
+      const value = codes[0].value;
+      if (!value) return;
+      const code = parseMarkerDeepLink(value) ?? (value.match(/^[A-Z0-9]{7}$/) ? value : null);
+      if (code) handleCode(code);
     },
-    [handleCode],
-  );
-
-  const frameProcessor = useFrameProcessor(
-    (frame) => {
-      'worklet';
-      frameCount.value++;
-      if (frameCount.value % 3 !== 0) return;
-      const result = detectRingTag(frame);
-      runOnJS(onDetection)(result.center !== null, result.code);
-    },
-    [onDetection],
-  );
+  });
 
   useEffect(() => {
     if (!deepLinkCode || lockedRef.current) return;
@@ -144,12 +125,11 @@ export default function ScanScreen() {
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={phase === 'scanning'}
-        frameProcessor={phase === 'scanning' ? frameProcessor : undefined}
-        pixelFormat="yuv"
+        codeScanner={codeScanner}
       />
       <View style={styles.overlay}>
         <Text style={styles.overlayTitle}>SCAN RING TAG</Text>
-        <View style={[styles.frame, detecting && styles.frameActive]} />
+        <View style={styles.frame} />
         <Text style={styles.overlayHint}>Point camera at a Wallz Ring Tag</Text>
         {pendingCode && !loading && (
           <TouchableOpacity style={styles.btn} onPress={reset}>
@@ -158,7 +138,7 @@ export default function ScanScreen() {
         )}
       </View>
       <AROverlay
-        visible={detecting && !lockedRef.current}
+        visible={false}
         decoded={!!pendingCode}
         code={pendingCode}
       />
@@ -178,7 +158,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 40,
   },
-  frameActive: { borderColor: '#7c3aed' },
   overlayHint: { color: '#aaa', fontSize: 13 },
   permText: { color: '#fff', marginBottom: 20, textAlign: 'center', padding: 24 },
   btn: {
