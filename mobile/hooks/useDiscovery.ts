@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/authStore';
 
 export type DiscoveryResult =
   | { status: 'success'; markerId: string }
-  | { status: 'already_found' }
+  | { status: 'already_found'; markerId: string }
   | { status: 'not_found' }
   | { status: 'expired' }
   | { status: 'error'; message: string };
@@ -34,7 +34,7 @@ export function useDiscovery() {
         .from('discoveries')
         .insert({ user_id: user.id, marker_id: marker.id });
 
-      if (insertError?.code === '23505') return { status: 'already_found' };
+      if (insertError?.code === '23505') return { status: 'already_found', markerId: marker.id };
       if (insertError) return { status: 'error', message: insertError.message };
 
       return { status: 'success', markerId: marker.id };

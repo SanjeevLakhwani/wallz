@@ -21,7 +21,8 @@ export default function ScanScreen() {
         router.replace(`/marker/${result.markerId}`);
         break;
       case 'already_found':
-        Alert.alert('Already in collection', 'You found this one before.', [
+        Alert.alert('Already in collection', 'You already found this tag.', [
+          { text: 'View Tag', onPress: () => router.replace(`/marker/${result.markerId}`) },
           { text: 'OK', onPress: () => setScanned(false) },
         ]);
         break;
