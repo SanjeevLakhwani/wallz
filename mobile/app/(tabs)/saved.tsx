@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, Modal, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import QRCode from 'react-native-qrcode-svg';
 import { supabase } from '@/lib/supabase';
@@ -112,7 +113,7 @@ export default function SavedScreen() {
                     </Text>
                   </View>
                   {expired && <Text style={styles.expiredBadge}>EXPIRED</Text>}
-                  <Text style={styles.arrow}>›</Text>
+                  <Ionicons name="chevron-forward" size={18} color="#555" />
                 </TouchableOpacity>
               );
             }}
@@ -127,7 +128,10 @@ export default function SavedScreen() {
           renderItem={({ item }) => {
             const expired = isExpired(item);
             return (
-              <View style={[styles.row, expired && styles.rowExpired]}>
+              <TouchableOpacity
+                style={[styles.row, expired && styles.rowExpired]}
+                onPress={() => router.push(`/my-tag/${item.id}`)}
+              >
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.area, expired && styles.textDim]}>
                     {item.area_name}
@@ -139,10 +143,11 @@ export default function SavedScreen() {
                   </Text>
                 </View>
                 {expired && <Text style={styles.expiredBadge}>EXPIRED</Text>}
-                <TouchableOpacity style={styles.qrBtn} onPress={() => setQrTag(item)}>
-                  <Text style={styles.qrBtnText}>QR</Text>
+                <TouchableOpacity style={styles.qrBtn} onPress={(e) => { e.stopPropagation(); setQrTag(item); }}>
+                  <Ionicons name="qr-code-outline" size={16} color="#fff" />
                 </TouchableOpacity>
-              </View>
+                <Ionicons name="chevron-forward" size={18} color="#555" />
+              </TouchableOpacity>
             );
           }}
         />
@@ -218,16 +223,15 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginRight: 8,
   },
-  arrow: { color: '#555', fontSize: 20 },
   qrBtn: {
     backgroundColor: '#1a1a1a',
     borderWidth: 1,
     borderColor: '#2a2a2a',
     borderRadius: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginRight: 8,
   },
-  qrBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   modalBg: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.85)',

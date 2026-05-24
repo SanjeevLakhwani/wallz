@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, Image, ScrollView, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
@@ -88,7 +89,7 @@ export default function MarkerDetailScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <TouchableOpacity style={styles.back} onPress={() => router.replace('/(tabs)')}>
-        <Text style={styles.backText}>← Back</Text>
+        <Ionicons name="chevron-back" size={22} color="#888" />
       </TouchableOpacity>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -96,7 +97,7 @@ export default function MarkerDetailScreen() {
           <Image source={{ uri: marker.photo_url }} style={styles.photo} />
         ) : (
           <View style={styles.lockedPhoto}>
-            <Text style={styles.lockedIcon}>🔒</Text>
+            <Ionicons name="lock-closed" size={32} color="#555" />
             <Text style={styles.lockedText}>Scan the QR code in person to reveal</Text>
           </View>
         )}
@@ -112,7 +113,7 @@ export default function MarkerDetailScreen() {
 
           <View style={styles.stats}>
             <TouchableOpacity style={styles.likeBtn} onPress={toggleLike}>
-              <Text style={styles.likeIcon}>{liked ? '❤️' : '🤍'}</Text>
+              <Ionicons name={liked ? 'heart' : 'heart-outline'} size={20} color={liked ? '#ff4d6d' : '#aaa'} />
               <Text style={styles.statText}>{likeCount}</Text>
             </TouchableOpacity>
             <View style={styles.stat}>
@@ -183,7 +184,6 @@ const styles = StyleSheet.create({
   },
   stats: { flexDirection: 'row', gap: 16, marginBottom: 32 },
   likeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  likeIcon: { fontSize: 20 },
   stat: { justifyContent: 'center' },
   statText: { color: '#aaa', fontSize: 14 },
   sectionTitle: { color: '#fff', fontWeight: '700', fontSize: 15, marginBottom: 12 },

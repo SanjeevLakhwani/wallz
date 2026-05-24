@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 const TAB_BAR_STYLE = {
   backgroundColor: '#0a0a0a',
@@ -20,28 +20,28 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Map',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🗺️</Text>,
+          tabBarIcon: ({ color, size }) => <Ionicons name="map-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="scan"
         options={{
           title: 'Scan',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📷</Text>,
+          tabBarIcon: ({ color, size }) => <Ionicons name="qr-code-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="saved"
         options={{
           title: 'Collection',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📦</Text>,
+          tabBarIcon: ({ color, size }) => <Ionicons name="bookmark-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>👤</Text>,
+          tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} />,
         }}
       />
     </Tabs>
