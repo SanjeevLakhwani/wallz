@@ -155,7 +155,10 @@ export default function SubmitScreen() {
           }}
         >
           <MapboxGL.Camera
-            defaultSettings={{ centerCoordinate: initialCoords, zoomLevel: 14 }}
+            centerCoordinate={initialCoords}
+            zoomLevel={14}
+            animationMode="flyTo"
+            animationDuration={800}
           />
         </MapboxGL.MapView>
 
