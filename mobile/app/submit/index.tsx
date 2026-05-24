@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, Image,
+  StyleSheet, ScrollView, Alert, ActivityIndicator,
+} from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
-import QRCode from 'react-native-qrcode-svg';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/stores/authStore';
-import { generateMarkerCode, markerDeepLink } from '@/lib/marker';
+import { generateMarkerCode } from '@/lib/marker';
 import { toGeohash } from '@/lib/geohash';
+import { RingTagGenerator } from '@/components/RingTagGenerator';
 import * as Location from 'expo-location';
 
 type Step = 'generate' | 'photo' | 'area' | 'submit';
@@ -21,18 +24,13 @@ export default function SubmitScreen() {
   const [geohash, setGeohash] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const deepLink = markerDeepLink(markerCode);
-
   const pickPhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
       Alert.alert('Permission needed', 'Camera access is required to photo your tag.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: 'images',
-      quality: 0.8,
-    });
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: 'images', quality: 0.8 });
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
       setStep('area');
@@ -46,8 +44,7 @@ export default function SubmitScreen() {
       return;
     }
     const loc = await Location.getCurrentPositionAsync({});
-    const hash = toGeohash(loc.coords.latitude, loc.coords.longitude);
-    setGeohash(hash);
+    setGeohash(toGeohash(loc.coords.latitude, loc.coords.longitude));
   };
 
   const handleSubmit = async () => {
@@ -55,26 +52,23 @@ export default function SubmitScreen() {
     setLoading(true);
 
     try {
-      // Upload photo via XHR — fetch+blob and FormData both fail in React Native
       const ext = photo.split('.').pop() ?? 'jpg';
       const path = `markers/${user.id}/${markerCode}.${ext}`;
       const { data: { session } } = await supabase.auth.getSession();
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
+
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `${supabaseUrl}/storage/v1/object/marker-photos/${path}`);
         xhr.setRequestHeader('Authorization', `Bearer ${session?.access_token}`);
         xhr.setRequestHeader('Content-Type', `image/${ext}`);
-        xhr.onload = () => xhr.status === 200 ? resolve() : reject(new Error(xhr.responseText));
+        xhr.onload = () => (xhr.status === 200 ? resolve() : reject(new Error(xhr.responseText)));
         xhr.onerror = () => reject(new Error('Upload failed'));
         xhr.send({ uri: photo, type: `image/${ext}`, name: `photo.${ext}` } as any);
       });
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('marker-photos')
-        .getPublicUrl(path);
+      const { data: { publicUrl } } = supabase.storage.from('marker-photos').getPublicUrl(path);
 
-      // Insert marker record — auto-approved for testing
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
       const { error: insertError } = await supabase.from('markers').insert({
@@ -89,11 +83,9 @@ export default function SubmitScreen() {
       });
       if (insertError) throw insertError;
 
-      Alert.alert(
-        'Tag live!',
-        'Your tag is now live on the map for 30 days.',
-        [{ text: 'OK', onPress: () => router.replace('/(tabs)') }]
-      );
+      Alert.alert('Tag live!', 'Your tag is now live on the map for 30 days.', [
+        { text: 'OK', onPress: () => router.replace('/(tabs)') },
+      ]);
     } catch (err: any) {
       Alert.alert('Error', err.message ?? 'Upload failed');
     } finally {
@@ -109,16 +101,15 @@ export default function SubmitScreen() {
 
       <Text style={styles.title}>Submit Tag</Text>
 
-      {/* Step 1: Generate */}
+      {/* Step 1: Generate Ring Tag */}
       <View style={styles.section}>
-        <Text style={styles.stepLabel}>1 · Your Unique Tag</Text>
-        <Text style={styles.hint}>Screenshot and print this. Place it somewhere in the world.</Text>
-        <View style={styles.qrContainer}>
-          <QRCode value={deepLink} size={200} color="#fff" backgroundColor="#0a0a0a" />
-          <View style={styles.qrBorder} pointerEvents="none" />
+        <Text style={styles.stepLabel}>1 · Your Unique Ring Tag</Text>
+        <Text style={styles.hint}>Screenshot and print this (min 8×8 cm, matte paper). Place it somewhere in the world.</Text>
+        <View style={styles.tagContainer}>
+          <RingTagGenerator code={markerCode} size={200} />
           <Text style={styles.wallzLabel}>WALLZ</Text>
         </View>
-        <Text style={styles.codeText}>{markerCode.slice(0, 8)}...</Text>
+        <Text style={styles.codeText}>{markerCode}</Text>
         {step === 'generate' && (
           <TouchableOpacity style={styles.btn} onPress={() => setStep('photo')}>
             <Text style={styles.btnText}>I've placed it → Take photo</Text>
@@ -175,10 +166,7 @@ export default function SubmitScreen() {
             onPress={handleSubmit}
             disabled={loading}
           >
-            {loading
-              ? <ActivityIndicator color="#000" />
-              : <Text style={styles.btnText}>Submit Tag</Text>
-            }
+            {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.btnText}>Submit Tag</Text>}
           </TouchableOpacity>
         </View>
       )}
@@ -195,31 +183,24 @@ const styles = StyleSheet.create({
   section: { marginBottom: 36 },
   stepLabel: { color: '#fff', fontWeight: '700', fontSize: 16, marginBottom: 8 },
   hint: { color: '#666', fontSize: 13, marginBottom: 16 },
-  qrContainer: {
+  tagContainer: {
     alignSelf: 'center',
-    padding: 24,
-    backgroundColor: '#0a0a0a',
-    borderWidth: 2,
+    padding: 16,
+    backgroundColor: '#0f0a1e',
+    borderWidth: 1,
     borderColor: '#2a2a2a',
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 8,
   },
-  qrBorder: {
-    position: 'absolute',
-    top: 8, left: 8, right: 8, bottom: 8,
-    borderWidth: 1,
-    borderColor: '#333',
-    borderRadius: 8,
-  },
   wallzLabel: {
     color: '#fff',
     fontWeight: '900',
     letterSpacing: 6,
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: 10,
+    fontSize: 13,
   },
-  codeText: { color: '#444', fontSize: 11, textAlign: 'center', marginBottom: 16 },
+  codeText: { color: '#7c3aed', fontSize: 14, fontWeight: '700', textAlign: 'center', letterSpacing: 3, marginBottom: 16 },
   btn: {
     backgroundColor: '#fff',
     borderRadius: 8,

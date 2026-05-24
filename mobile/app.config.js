@@ -7,6 +7,9 @@ module.exports = {
     orientation: 'portrait',
     icon: './assets/icon.png',
     userInterfaceStyle: 'dark',
+    android: {
+      package: 'com.wallz.app.slakhwani',
+    },
     ios: {
       supportsTablet: false,
       bundleIdentifier: 'com.wallz.app.slakhwani',
@@ -24,7 +27,14 @@ module.exports = {
       'expo-system-ui',
       'expo-secure-store',
       'expo-splash-screen',
-      'expo-camera',
+      [
+        'react-native-vision-camera',
+        {
+          cameraPermissionText: 'Wallz uses your camera to scan Ring Tag markers.',
+          enableFrameProcessors: true,
+          enableCodeScanner: false,
+        },
+      ],
       [
         'expo-location',
         {

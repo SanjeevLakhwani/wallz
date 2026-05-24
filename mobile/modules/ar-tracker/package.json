@@ -1,0 +1,11 @@
+{
+  "name": "ar-tracker",
+  "version": "1.0.0",
+  "description": "ARKit Ring Tag image tracking for Wallz",
+  "main": "index.ts",
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}

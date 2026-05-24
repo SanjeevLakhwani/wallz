@@ -5,6 +5,9 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "ar-tracker": [
+        "./modules/ar-tracker/index.ts"
       ]
     }
   },

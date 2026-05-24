@@ -1,0 +1,170 @@
+// AR view: shown after CV reader decodes a Ring Tag.
+// Captures the Ring Tag SVG as a PNG, registers it with ARKit, then overlays
+// a flat info card anchored to the tracked physical marker in 3D space.
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import Svg from 'react-native-svg';
+import { ARTrackerView } from 'ar-tracker';
+import { supabase } from '@/lib/supabase';
+import { RingTagGenerator } from '@/components/RingTagGenerator';
+
+interface MarkerInfo {
+  photo_url: string | null;
+  area_name: string;
+}
+
+interface Props {
+  markerCode: string;
+  markerId: string;
+  physicalWidth?: number;
+  onDismiss: () => void;
+}
+
+export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismiss }: Props) {
+  const { width: screenW, height: screenH } = Dimensions.get('window');
+  const svgRef = useRef<Svg>(null);
+
+  const [referenceImageBase64, setReferenceImageBase64] = useState<string | null>(null);
+  const [anchorPos, setAnchorPos] = useState<{ x: number; y: number } | null>(null);
+  const [anchorVisible, setAnchorVisible] = useState(false);
+  const [markerInfo, setMarkerInfo] = useState<MarkerInfo | null>(null);
+  const [loadingInfo, setLoadingInfo] = useState(true);
+
+  // Fetch marker info for the overlay card
+  useEffect(() => {
+    supabase
+      .from('markers')
+      .select('photo_url, area_name')
+      .eq('id', markerId)
+      .single()
+      .then(({ data }) => {
+        if (data) setMarkerInfo(data);
+        setLoadingInfo(false);
+      });
+  }, [markerId]);
+
+  // Export Ring Tag SVG → base64 PNG for ARKit reference image registration
+  useEffect(() => {
+    const t = setTimeout(() => {
+      svgRef.current?.toDataURL((data: string) => {
+        setReferenceImageBase64(data);
+      });
+    }, 300);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleAnchorUpdated = useCallback(
+    (e: { nativeEvent: { normalX: number; normalY: number; visible: boolean } }) => {
+      const { normalX, normalY, visible } = e.nativeEvent;
+      setAnchorVisible(visible);
+      if (visible) setAnchorPos({ x: normalX * screenW, y: normalY * screenH });
+    },
+    [screenW, screenH],
+  );
+
+  // Card position: above the projected anchor, clamped to screen edges
+  const cardW = 220;
+  const cardH = 160;
+  const cardX = anchorPos
+    ? Math.max(8, Math.min(screenW - cardW - 8, anchorPos.x - cardW / 2))
+    : (screenW - cardW) / 2;
+  const cardY = anchorPos ? Math.max(80, anchorPos.y - cardH - 24) : (screenH - cardH) / 2;
+
+  return (
+    <View style={styles.container}>
+      {/* Off-screen Ring Tag for SVG → PNG export */}
+      <View style={styles.offscreen} pointerEvents="none">
+        <RingTagGenerator ref={svgRef} code={markerCode} size={400} />
+      </View>
+
+      {/* ARKit camera + image tracker */}
+      {referenceImageBase64 && (
+        <ARTrackerView
+          style={StyleSheet.absoluteFill}
+          referenceImageBase64={referenceImageBase64}
+          physicalWidth={physicalWidth}
+          isActive
+          onAnchorFound={() => setAnchorVisible(true)}
+          onAnchorUpdated={handleAnchorUpdated}
+          onAnchorLost={() => setAnchorVisible(false)}
+        />
+      )}
+
+      {/* Flat info card floating above the physical marker */}
+      {anchorVisible && !loadingInfo && (
+        <View
+          style={[styles.card, { left: cardX, top: cardY, width: cardW }]}
+          pointerEvents="box-none"
+        >
+          {markerInfo?.photo_url && (
+            <Image source={{ uri: markerInfo.photo_url }} style={styles.photo} />
+          )}
+          <View style={styles.cardBody}>
+            <Text style={styles.area} numberOfLines={1}>
+              {markerInfo?.area_name ?? ''}
+            </Text>
+            <Text style={styles.code}>{markerCode}</Text>
+          </View>
+        </View>
+      )}
+
+      {(loadingInfo || !referenceImageBase64) && (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator color="#7c3aed" />
+          <Text style={styles.loadingText}>Initialising AR…</Text>
+        </View>
+      )}
+
+      <TouchableOpacity style={styles.close} onPress={onDismiss}>
+        <Text style={styles.closeText}>✕</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#000' },
+  offscreen: { position: 'absolute', left: -2000, top: -2000, opacity: 0 },
+  card: {
+    position: 'absolute',
+    backgroundColor: '#0f0a1eee',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#7c3aed55',
+    overflow: 'hidden',
+  },
+  photo: { width: '100%', height: 100, resizeMode: 'cover' },
+  cardBody: { padding: 10 },
+  area: { color: '#fff', fontSize: 14, fontWeight: '700', marginBottom: 2 },
+  code: { color: '#7c3aed', fontSize: 11, fontWeight: '700', letterSpacing: 2 },
+  loadingRow: {
+    position: 'absolute',
+    top: '50%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    gap: 10,
+  },
+  loadingText: { color: '#aaa', fontSize: 13 },
+  close: {
+    position: 'absolute',
+    top: 56,
+    right: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#00000088',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeText: { color: '#fff', fontSize: 16 },
+});

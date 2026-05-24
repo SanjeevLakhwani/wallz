@@ -1,14 +1,15 @@
-import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
+const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-export const generateMarkerCode = (): string => uuidv4();
+// 7-char uppercase alphanumeric code (36^7 ≈ 78 billion unique values)
+export const generateMarkerCode = (): string =>
+  Array.from({ length: 7 }, () => CHARSET[Math.floor(Math.random() * CHARSET.length)]).join('');
 
-export const markerDeepLink = (code: string): string =>
-  `wallz://scan/${code}`;
+export const markerDeepLink = (code: string): string => `wallz://scan/${code}`;
 
+// Accept both new 7-char codes and legacy 36-char UUIDs
 export const parseMarkerDeepLink = (url: string): string | null => {
-  const match = url.match(/wallz:\/\/scan\/([a-f0-9-]{36})/);
-  return match ? match[1] : null;
+  const m = url.match(/wallz:\/\/scan\/([A-Z0-9]{7}|[a-f0-9-]{36})/);
+  return m ? m[1] : null;
 };
 
 export const daysUntilExpiry = (expiresAt: string): number => {
