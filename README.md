@@ -1,4 +1,4 @@
-# Wallz
+# Cairn
 
 > Find the tags. Keep them forever.
 
@@ -8,7 +8,7 @@ Social discovery app built around physical fiducial markers placed in the real w
 
 ## What is this?
 
-Wallz generates unique QR-based fiducial markers that people print and place on real things in the world — walls, objects, hidden spots. Other users hunt for them using a map that shows only approximate area counts, never exact locations. Find one, scan it, it's yours permanently. Miss it before 30 days, it's gone.
+Cairn generates unique fiducial markers that people print and place on real things in the world — walls, objects, hidden spots. Other users hunt for them using a map that shows only approximate area counts, never exact locations. Find one, scan it, it's yours permanently. Miss it before 30 days, it's gone.
 
 Full concept → [CONCEPT.md](./CONCEPT.md)
 
