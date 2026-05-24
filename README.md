@@ -63,4 +63,4 @@ mobile/supabase/migrations/001_init.sql
 
 ## Built for hackathon
 
-Wallz — 2026
+Cairn — 2026
