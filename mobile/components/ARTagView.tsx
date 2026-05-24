@@ -57,7 +57,7 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
   // Give VisionCamera time to fully release its AVCaptureSession before ARKit starts.
   // iOS allows only one active camera session — overlap causes black screen.
   useEffect(() => {
-    const t = setTimeout(() => setCamReady(true), 700);
+    const t = setTimeout(() => setCamReady(true), 1200);
     return () => clearTimeout(t);
   }, []);
 
@@ -68,15 +68,17 @@ export function ARTagView({ markerCode, markerId, physicalWidth = 0.12, onDismis
       svgRef.current?.toDataURL((data: string) => {
         setReferenceImageBase64(data);
       });
-    }, 700);
+    }, 1200);
     return () => clearTimeout(t);
   }, []);
 
   const handleAnchorUpdated = useCallback(
     (e: { nativeEvent: { normalX: number; normalY: number; visible: boolean } }) => {
       const { normalX, normalY, visible } = e.nativeEvent;
-      setAnchorVisible(visible);
-      if (visible) setAnchorPos({ x: normalX * screenW, y: normalY * screenH });
+      const inViewport = normalX >= 0 && normalX <= 1 && normalY >= 0 && normalY <= 1;
+      const isVisible = visible && inViewport;
+      setAnchorVisible(isVisible);
+      if (isVisible) setAnchorPos({ x: normalX * screenW, y: normalY * screenH });
     },
     [screenW, screenH],
   );

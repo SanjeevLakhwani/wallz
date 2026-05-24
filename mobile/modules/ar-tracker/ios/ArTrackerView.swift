@@ -16,6 +16,7 @@ public class ArTrackerView: ExpoView, ARSCNViewDelegate {
   private var displayLink: CADisplayLink?
   private var trackedAnchor: ARImageAnchor?
   private var trackedNode: SCNNode?
+  private var hasFirstFrame = false
 
   // MARK: - Init
   required init(appContext: AppContext? = nil) {
@@ -25,6 +26,7 @@ public class ArTrackerView: ExpoView, ARSCNViewDelegate {
 
   private func setupSceneView() {
     sceneView = ARSCNView(frame: .zero)
+    sceneView.alpha = 0
     sceneView.delegate = self
     sceneView.autoenablesDefaultLighting = true
     sceneView.automaticallyUpdatesLighting = true
@@ -69,9 +71,19 @@ public class ArTrackerView: ExpoView, ARSCNViewDelegate {
     displayLink = nil
     trackedAnchor = nil
     trackedNode = nil
+    hasFirstFrame = false
+    sceneView.alpha = 0
   }
 
   // MARK: - ARSCNViewDelegate
+  public func renderer(_ renderer: SCNSceneRenderer, updateAtTime time: TimeInterval) {
+    guard !hasFirstFrame else { return }
+    hasFirstFrame = true
+    DispatchQueue.main.async { [weak self] in
+      UIView.animate(withDuration: 0.25) { self?.sceneView.alpha = 1 }
+    }
+  }
+
   public func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
     guard let imageAnchor = anchor as? ARImageAnchor else { return }
     trackedAnchor = imageAnchor
